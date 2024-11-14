@@ -1,6 +1,8 @@
-use std::error::Error;
-use std::fmt;
-use std::io::{Read, Write};
+use std::{
+    error::Error,
+    fmt,
+    io::{Read, Write},
+};
 
 use mio::{Interest, Poll, Token};
 
@@ -43,19 +45,23 @@ impl Client {
         c
     }
 
-    pub fn read(&mut self) -> Result<usize, Box<dyn Error>> {
+    // Returns true if client is done and can be removed
+    pub fn read(&mut self) -> Result<bool, Box<dyn Error>> {
         let mut buf = [0; 1024];
         match self.stream.read(&mut buf) {
             Ok(n) => {
                 if n == 0 {
                     debug!("Client closed connection");
-                    return Ok(0);
+                    return Ok(true);
                 }
                 println!("Read {} bytes from client.", n);
-                if let Err(e) = self.handle_client(&buf[..n]) {
-                    error!("Error: {}", e);
+                match self.handle_client(&buf[..n]) {
+                    Ok(done) => Ok(done),
+                    Err(e) => {
+                        error!("Error: {}", e);
+                        Ok(false)
+                    },
                 }
-                Ok(n)
             },
             Err(e) => Err(Box::new(
                 AdNetError::new(format!("Failed to read from client: {}", e))
@@ -63,7 +69,7 @@ impl Client {
         }
     }
 
-    fn handle_client(&mut self, buf: &[u8]) -> Result<(), Box<dyn Error>> {
+    fn handle_client(&mut self, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
         if buf.len() < 8 {
             return Err(Box::new(AdNetError::new_str("Too short command message")));
         }
@@ -78,7 +84,7 @@ impl Client {
         }
     }
 
-    fn handle_task001(&mut self, buf: &[u8]) -> Result<(), Box<dyn Error>> {
+    fn handle_task001(&mut self, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
         let codestr = match String::from_utf8(buf[9..].to_vec()) {
             Ok(s) => s,
             Err(_) => {
@@ -87,9 +93,10 @@ impl Client {
         };
         info!("Handling TASK-001. Secret code: {}", codestr.trim_end());
 
-        let mut rng: Pcg64 = Seeder::from(codestr).make_rng();
+        let mut rng: Pcg64 = Seeder::from(codestr.trim_end()).make_rng();
         let len: u32 = rng.gen();
-        let len = len % 100 + 500;
+        let len = len % 20000 + 90000;
+        debug!("Length is {}", len);
 
         let s: String = rng
             .sample_iter(&Alphanumeric)
@@ -97,9 +104,10 @@ impl Client {
             .map(char::from)
             .collect();
 
-        self.stream.write(s.as_bytes())?;
+        let n = self.stream.write(s.as_bytes()).unwrap();
+        debug!("Wrote {} bytes", n);
 
-        Ok(())
+        Ok(true)
     }
 
 }

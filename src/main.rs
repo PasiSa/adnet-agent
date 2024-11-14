@@ -1,25 +1,32 @@
 #[macro_use]
 extern crate log;
 
-use std::collections::HashMap;
-use std::error::Error;
+use std::{
+    collections::HashMap,
+    error::Error,
+};
 
-use mio::net::TcpListener;
 use mio::{Events, Interest, Poll, Token};
+use mio::net::TcpListener;
 
-use crate::client::Client;
-use crate::mio_tokens::TokenManager;
+use crate::{
+    args::Args,
+    client::Client,
+    mio_tokens::TokenManager,
+};
 
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::builder().format_timestamp_nanos().init();
     println!("adnet-agent listening for connections");
 
+    let args = Args::new();
+
     let mut tokenmanager = TokenManager::new();
     let mut poll = Poll::new()?;
     let mut events = Events::with_capacity(128);
  
-    let addr = "127.0.0.1:12345".parse()?;
+    let addr = args.listen().parse()?;
     let mut server = TcpListener::bind(addr)?;
     let listen_token = tokenmanager.allocate_token();
     poll.registry()
@@ -28,7 +35,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut clients: HashMap<Token, Client> = HashMap::new();
 
     loop {
-        // Poll Mio for events, blocking until we get an event.
         poll.poll(&mut events, None)?;
 
         // Process each event.
@@ -46,8 +52,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             if let Some(c) = clients.get_mut(&event.token()) {
                 match c.read() {
-                    Ok(n) => {
-                        if n == 0 {  // closing connection
+                    Ok(done) => {
+                        if done {  // closing connection
                             tokenmanager.free_token(event.token());
                             clients.remove(&event.token());
                         }
@@ -65,5 +71,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 }
 
+mod args;
 mod client;
 mod mio_tokens;
