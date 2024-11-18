@@ -3,7 +3,7 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    /// Configuration file to read.
+    /// Address to bind for listening.
     #[arg(short, long, default_value = "0.0.0.0:12345")]
     listen: String,
 }

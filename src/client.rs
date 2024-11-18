@@ -104,8 +104,12 @@ impl Client {
             .map(char::from)
             .collect();
 
-        let n = self.stream.write(s.as_bytes()).unwrap();
-        debug!("Wrote {} bytes", n);
+        let mut total: usize = 0;
+        while total < len.try_into().unwrap() {
+            let n = self.stream.write(&s.as_bytes()[total..]).unwrap();
+            debug!("Wrote {} bytes", n);
+            total += n;
+        }
 
         Ok(true)
     }
