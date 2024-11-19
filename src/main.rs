@@ -51,19 +51,29 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
 
             if let Some(c) = clients.get_mut(&event.token()) {
-                match c.read() {
-                    Ok(done) => {
-                        if done {  // closing connection
-                            tokenmanager.free_token(event.token());
-                            clients.remove(&event.token());
-                        }
-                    },
-                    Err(e) => {
+                if event.is_readable() {
+                    if let Err(e) = c.handle_read_event() {
                         error!("Client error: {}", e);
                         tokenmanager.free_token(event.token());
                         clients.remove(&event.token());
+                        break;
                     }
-                };
+                }
+
+                if event.is_writable() {
+                    if let Err(e) = c.handle_write_event() {
+                        error!("Client error: {}", e);
+                        tokenmanager.free_token(event.token());
+                        clients.remove(&event.token());
+                        break;
+                    }
+                }
+
+                if !c.check_write_pending(&mut poll, event.token()) && c.is_finished() {
+                    debug!("Client finishing");
+                    tokenmanager.free_token(event.token());
+                    clients.remove(&event.token());
+                }
             } else {
                 error!("Unknown token!");
             }
