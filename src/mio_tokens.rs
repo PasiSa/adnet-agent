@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use mio::Token;
 
+/// Allocates and manages MIO tokens, to ensure unique tokens for its users.
 pub struct TokenManager {
     used_tokens: HashSet<Token>,
     free_tokens: Vec<Token>,
@@ -17,6 +18,7 @@ impl TokenManager {
         }
     }
 
+    /// Allocate an unused token.
     pub fn allocate_token(&mut self) -> Token {
         if let Some(token) = self.free_tokens.pop() {
             self.used_tokens.insert(token);
@@ -29,6 +31,7 @@ impl TokenManager {
         }
     }
 
+    /// Release a token.
     pub fn free_token(&mut self, token: Token) {
         if self.used_tokens.remove(&token) {
             self.free_tokens.push(token);

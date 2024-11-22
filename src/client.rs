@@ -12,6 +12,7 @@ use rand_pcg::Pcg64;
 
 use mio::net::TcpStream;
 
+/// Our custom error type for this application.
 #[derive(Debug)]
 struct AdNetError {
     msg: String,
@@ -34,6 +35,8 @@ impl AdNetError {
     }
 }
 
+
+/// State related to one connected client.
 pub struct Client {
     stream: TcpStream,
     written: usize,  // how many bytes written to socket
@@ -42,6 +45,8 @@ pub struct Client {
 }
 
 impl Client {
+    /// Create client state after connection has been accepted.
+    /// The Client object owns the TCP stream, and sets the mio token for it.
     pub fn new(stream: TcpStream, poll: &mut Poll, token: Token) -> Client {
         let mut c = Client {
             stream,
@@ -91,6 +96,9 @@ impl Client {
     }
 
 
+    /// Check if we have something to write to the socket, and if so register to
+    /// be interested in WRITABLE MIO events.
+    /// Returns `true` if we have something to write.
     pub fn check_write_pending(&mut self, poll: &mut Poll, token: Token) -> bool {
         if self.writestr.len() > self.written {
             poll.registry().reregister(
