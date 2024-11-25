@@ -13,7 +13,7 @@ use mio::net::TcpListener;
 use crate::{
     args::Args,
     client::Client,
-    mio_tokens::TokenManager,
+    tokenmanager::TokenManager,
 };
 
 
@@ -101,4 +101,5 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 mod args;
 mod client;
-mod mio_tokens;
+mod tokenmanager;
+mod tasks;

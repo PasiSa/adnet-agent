@@ -5,16 +5,13 @@ use std::{
 };
 
 use mio::{Interest, Poll, Token};
-
-use rand::{distributions::Alphanumeric, prelude::*};
-use rand_seeder::Seeder;
-use rand_pcg::Pcg64;
-
 use mio::net::TcpStream;
+
+use crate::tasks::*;
 
 /// Our custom error type for this application.
 #[derive(Debug)]
-struct AdNetError {
+pub struct AdNetError {
     msg: String,
 }
 
@@ -123,45 +120,25 @@ impl Client {
     }
 
 
+    pub fn write_string(&mut self, str: String) {
+        self.writestr = str;
+        self.written = 0;
+    }
+
+
     fn process_command_msg(&mut self, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
         if buf.len() < 8 {
             return Err(Box::new(AdNetError::new_str("Too short command message")));
         }
         let string = String::from_utf8(buf[..8].to_vec())?;
-        debug!("Read string: {}", string);
         match string.as_str() {
-            "TASK-001" => self.handle_task001(buf),
+            "TASK-001" => task001::start(self, buf),
+            "TASK-002" => task002::start(&self, buf),
             _ => {
                 error!("Invalid command: {}", string);
                 Err(Box::new(AdNetError::new(format!("Invalid command: {}", string))))
             },
         }
-    }
-
-
-    // Return true, if connection is done and can be closed
-    fn handle_task001(&mut self, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
-        let codestr = match String::from_utf8(buf[9..].to_vec()) {
-            Ok(s) => s,
-            Err(_) => {
-                return Err(Box::new(AdNetError::new_str("Invalid code")));
-            }
-        };
-        info!("Handling TASK-001. Secret code: {}", codestr.trim_end());
-
-        let mut rng: Pcg64 = Seeder::from(codestr.trim_end()).make_rng();
-        let len: u32 = rng.gen();
-        let len = len % 20000 + 90000;
-        debug!("Length is {}", len);
-
-        self.writestr = rng
-            .sample_iter(&Alphanumeric)
-            .take(len.try_into().unwrap())
-            .map(char::from)
-            .collect();
-        self.written = 0;
-
-        Ok(true)
     }
 
 }
