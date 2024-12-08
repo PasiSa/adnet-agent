@@ -39,7 +39,7 @@ pub fn start(mut _client: &Client, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
         let mut values: Vec<RandValues> = Vec::new();
         for _j in 0..3 {
             let len: u32 = rng.gen();
-            let char: u8 = rng.gen();    
+            let char: u8 = rng.gen();
             values.push( RandValues{
                 length: len % 40000 + 190000,
                 character: char % 20 + 65,

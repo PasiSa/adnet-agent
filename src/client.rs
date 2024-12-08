@@ -126,6 +126,14 @@ impl Client {
     }
 
 
+    pub fn write_socket(&mut self, buf: &[u8]) -> Result<usize, Box<dyn Error>> {
+        match self.stream.write(buf) {
+            Ok(n) => Ok(n),
+            Err(e) => Err(Box::new(e)),
+        }
+    }
+
+
     fn process_command_msg(&mut self, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
         if buf.len() < 8 {
             return Err(Box::new(AdNetError::new_str("Too short command message")));
@@ -134,6 +142,7 @@ impl Client {
         match string.as_str() {
             "TASK-001" => task001::start(self, buf),
             "TASK-002" => task002::start(&self, buf),
+            "TASK-003" => task003::start(self, buf),
             _ => {
                 error!("Invalid command: {}", string);
                 Err(Box::new(AdNetError::new(format!("Invalid command: {}", string))))

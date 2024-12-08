@@ -17,7 +17,7 @@ pub fn start(client: &mut Client, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
     if commandstr.len() < 2 {
         return Err(Box::new(AdNetError::new_str("Invalid command string")));
     }
-    info!("Handling TASK-002. Secret code: {}", commandstr[1]);
+    info!("Handling TASK-001. Secret code: {}", commandstr[1]);
 
     let mut rng: Pcg64 = Seeder::from(commandstr[1].trim_end()).make_rng();
     let len: u32 = rng.gen();
