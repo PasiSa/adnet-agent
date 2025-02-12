@@ -42,7 +42,7 @@ pub fn start(client: &mut Client, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
 
 fn transmit_loop(total_length: u32, character: u8, bytevector: &[u8]) ->  Result<(), AdNetError> {
     // TODO: error processing
-    let socket = UdpSocket::bind("127.0.0.1:20000").unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:20000").unwrap();
     let mut cumulative = 0;
     let mut received: usize = 0;
 
