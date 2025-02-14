@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeSet,
+    collections::HashMap,
     error::Error,
     net::{SocketAddr, UdpSocket},
 };
@@ -46,8 +46,8 @@ fn transmit_loop(total_length: u32, character: u8, bytevector: &[u8]) ->  Result
     let mut cumulative = 0;
     let mut received: usize = 0;
 
-    // list of sequence numbers we have received out of order
-    let mut ofo_set: BTreeSet<u32> = BTreeSet::new();
+    // Hash of sequence numbers and with packet lengths received out of order
+    let mut ofo_set: HashMap<u32, u16> = HashMap::new();
     while received < total_length as usize {
         let mut buf = [0; 1500];
         let (recv_len, address) = socket.recv_from(&mut buf).unwrap();
@@ -88,14 +88,15 @@ fn transmit_loop(total_length: u32, character: u8, bytevector: &[u8]) ->  Result
             cumulative += 1;
 
             // check if out-of-order sequence set can be cleaned up with this datagram
-            while ofo_set.contains(&cumulative) {
+            if let Some(ofolen) = ofo_set.get(&cumulative) {
+                received += *ofolen as usize;
                 ofo_set.remove(&cumulative);
                 cumulative += 1;
             }
             send_ack(&socket, address, sequence, bytevector[received % 97]);
         } else {
             if sequence > cumulative {
-                ofo_set.insert(sequence);
+                ofo_set.insert(sequence, len);
             }
             send_ack(&socket, address, cumulative, bytevector[received % 97]);
         }
