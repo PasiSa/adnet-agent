@@ -66,7 +66,8 @@ fn transmit_loop(total_length: u32, character: u8, bytevector: &[u8]) ->  Result
         if len as u32 > total_length - received as u32 {
             return Err(AdNetError::new(
                 format!(
-                    "Receiving a total of {} bytes, but {} was requested.", received, total_length)));
+                    "Receiving a total of {} bytes, but {} was requested.",
+                    received + len as usize, total_length)));
         }
         let ulen = len as usize + 6;
         if recv_len != ulen {
