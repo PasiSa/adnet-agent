@@ -26,7 +26,7 @@ pub fn start(client: &mut Client, buf: &[u8]) -> Result<bool, Box<dyn Error>> {
     let mut rng: Pcg64 = Seeder::from(commandstr[1].trim_end()).make_rng();
     let total_length: u32 = rng.gen();
     let total_length = total_length % 40000 + 200000;
-    let character: u8 = rng.gen();
+    let character: u8 = rng.gen_range(48..=122);
     let bytevector: Vec<u8> = (0..97).map(|_| rng.gen()).collect();
 
     debug!("Starting transfer of {} bytes repeating character '{}'",
