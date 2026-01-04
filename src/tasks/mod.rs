@@ -17,6 +17,6 @@ pub fn parse_commandstr(buf: &[u8]) -> Result<Vec<String>, Box<dyn Error>> {
     }
 }
 
-pub mod task001;
-pub mod task002;
-pub mod task003;
+pub mod cli;
+pub mod srv;
+pub mod udp;

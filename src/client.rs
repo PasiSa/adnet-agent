@@ -140,9 +140,9 @@ impl Client {
         }
         let string = String::from_utf8(buf[..8].to_vec())?;
         match string.as_str() {
-            "TASK-001" => task001::start(self, buf),
-            "TASK-002" => task002::start(&self, buf),
-            "TASK-003" => task003::start(self, buf),
+            "TASK-CLI" => cli::start(self, buf),
+            "TASK-SRV" => srv::start(&self, buf),
+            "TASK-UDP" => udp::start(self, buf),
             _ => {
                 error!("Invalid command: {}", string);
                 Err(Box::new(AdNetError::new(format!("Invalid command: {}", string))))
