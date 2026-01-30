@@ -88,13 +88,13 @@ fn transmit_loop(total_length: u32, character: u8, bytevector: &[u8]) ->  Result
             received += len as usize;
             cumulative += 1;
 
-            // check if out-of-order sequence set can be cleaned up with this datagram
-            if let Some(ofolen) = ofo_set.get(&cumulative) {
-                received += *ofolen as usize;
-                ofo_set.remove(&cumulative);
+            // Clear all consecutive out-of-order packets from the buffer in a loop since there can be more than one
+            while let Some(&ofolen) = ofo_set.get(&(cumulative + 1)) {
+                received += ofolen as usize;
+                ofo_set.remove(&(cumulative + 1));
                 cumulative += 1;
             }
-            send_ack(&socket, address, sequence, bytevector[received % 97]);
+            send_ack(&socket, address, cumulative, bytevector[received % 97]);
         } else {
             if sequence > cumulative {
                 ofo_set.insert(sequence, len);
